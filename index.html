@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/vue@next"></script>
+    <title>Legally Search</title>
+    <style>
+        /* Style the input field */
+        #app input[type="text"] {
+        padding: 10px;
+        font-size: 16px;
+        border: none;
+        border-bottom: 1px solid #ccc;
+        width: 100%;
+        }
+
+        /* Style the search results */
+        .search-results {
+        margin-top: 20px;
+        }
+
+        /* Style the search result headings */
+        .search-results h3 {
+        font-size: 20px;
+        margin-top: 0;
+        margin-bottom: 5px;
+        }
+
+        /* Style the search result excerpts */
+        .search-results p {
+        margin-top: 0;
+        margin-bottom: 10px;
+        line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Legally</h1>
+    <div id="app">
+        <input type="text" v-model="query" @keyup.enter="search" placeholder="Search for similar occurences in cases">
+        <div class="search-results">
+            <ol>
+                <li v-for="doc in documents">
+                    <a :href="doc.metadata.url"><h3>{{ doc.metadata.title }}</h3></a>
+                    <div>
+                        <p>{{ doc.metadata.date }}</p>
+                        <p>{{ doc.metadata.division }}</p>
+                    </div>
+                    <ul>
+                        <li v-for="excerpt in doc.excerpts">
+                            <p v-html="excerpt.text"></p>
+                        </li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
+    <script>       
+        const app = Vue.createApp({
+        data() {
+          return {
+            query: '',
+            documents: []
+          }
+        },
+        methods: {
+            async search() {
+                const API_URL = 'https://asia-east2-tiger-queen.cloudfunctions.net/legally-search'
+                const payload = JSON.stringify({query: this.query});
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: payload
+                });
+                const result = await response.json();
+                console.log(result)
+
+                const DOCUMENTS = result['responseSet'][0]['document']
+                const EXCERPTS = result['responseSet'][0]['response']
+
+                EXCERPTS.forEach((excerpt) => {
+                const document = DOCUMENTS[excerpt['documentIndex']]
+                if (document['excerpts']) {
+                    document['excerpts'].push(excerpt)
+                } else {
+                    document['excerpts'] = [excerpt]
+                }
+                })
+
+                DOCUMENTS.forEach((document) => {
+                    const metadataKvPairs = {};
+
+                    document.metadata.forEach(({ name, value }) => {
+                        metadataKvPairs[name] = value;
+                    });
+
+                    document.metadata = metadataKvPairs;
+
+                    // Deduplicate the excerpts array based on the text value
+                    const seenTexts = new Set();
+                    const deduplicatedExcerpts = [];
+
+                    for (const excerpt of document.excerpts) {
+                        // Check if the excerpt text has already been added to the result array
+                        if (seenTexts.has(excerpt.text)) {
+                        continue;
+                        }
+
+                        // Add the excerpt to the result array and the set of seen texts
+                        deduplicatedExcerpts.push(excerpt);
+                        seenTexts.add(excerpt.text);
+                    }
+
+                    // Replace the original excerpts array with the deduplicated one
+                    document.excerpts = deduplicatedExcerpts;
+                })
+                this.documents = DOCUMENTS
+            }
+        }
+      })
+
+      app.mount('#app')
+    </script>
+</body>
+</html>
