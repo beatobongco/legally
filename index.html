@@ -71,7 +71,11 @@
                 const payload = JSON.stringify({query: this.query});
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    body: payload
+                    body: payload,
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                 });
                 const result = await response.json();
                 console.log(result)
