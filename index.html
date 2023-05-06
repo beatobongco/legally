@@ -7,33 +7,104 @@
     <script src="https://unpkg.com/vue@next"></script>
     <title>Legally Search</title>
     <style>
-        /* Style the input field */
-        #app input[type="text"] {
-        padding: 10px;
-        font-size: 16px;
-        border: none;
-        border-bottom: 1px solid #ccc;
-        width: 100%;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f6f8fa;
         }
 
-        /* Style the search results */
-        .search-results {
-        margin-top: 20px;
+        h1 {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 30px;
+            font-weight: 300;
+            color: #333;
         }
 
-        /* Style the search result headings */
-        .search-results h3 {
-        font-size: 20px;
-        margin-top: 0;
-        margin-bottom: 5px;
+        #app {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
-        /* Style the search result excerpts */
-        .search-results p {
-        margin-top: 0;
-        margin-bottom: 10px;
-        line-height: 1.5;
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 20px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border 0.3s;
         }
+
+        input[type="text"]:focus {
+            border-color: #007aff;
+        }
+
+        .search-results ol {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .document {
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e3e3e3;
+        }
+
+        .search-results .document:last-child {
+            border-bottom: none;
+        }
+
+        a {
+            text-decoration: none;
+            color: #007aff;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        h3 {
+            font-size: 18px;
+            margin: 0;
+            margin-bottom: 2px;
+            font-weight: 600;
+        }
+
+        .metadata {
+            display: flex;
+            flex-wrap: wrap;
+            color: #777;
+            font-size: 13px;
+        }
+
+        .metadata p {
+            margin: 0;
+            margin-right: 10px;
+        }
+
+        .search-results ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .excerpt {
+            margin-bottom: 10px;
+        }
+
+        .excerpt p {
+            margin: 0;
+        }
+
     </style>
 </head>
 <body>
@@ -42,14 +113,14 @@
         <input type="text" v-model="query" @keyup.enter="search" placeholder="Search for similar occurences in cases">
         <div class="search-results">
             <ol>
-                <li v-for="doc in documents">
+                <li class="document" v-for="doc in documents">
                     <a :href="doc.metadata.url"><h3>{{ doc.metadata.title }}</h3></a>
-                    <div>
+                    <div class="metadata">
                         <p>{{ doc.metadata.date }}</p>
                         <p>{{ doc.metadata.division }}</p>
                     </div>
                     <ul>
-                        <li v-for="excerpt in doc.excerpts">
+                        <li class="excerpt" v-for="excerpt in doc.excerpts">
                             <p v-html="excerpt.text"></p>
                         </li>
                     </ul>
