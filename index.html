@@ -77,6 +77,13 @@
             margin: 0;
             margin-bottom: 2px;
             font-weight: 600;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            word-break: break-word;
         }
 
         .metadata {
@@ -104,26 +111,103 @@
         .excerpt p {
             margin: 0;
         }
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(246, 248, 250, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
 
+        .spinner {
+            border: 4px solid rgba(0, 122, 255, 0.2);
+            border-top: 4px solid #007aff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        p.title {
+            font-size: 15px;
+            font-weight: 500;
+            color: #666;
+            margin: 0 0 5px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: inline-block;
+            background-color: #f6f8fa;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        .show-more {
+            background-color: #007aff;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .show-more:hover {
+            background-color: #0063cc;
+        }
+
+        .show-more:focus {
+            outline: none;
+        }
+        p.id {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #606060;
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+        }
     </style>
 </head>
 <body>
     <h1>Legally</h1>
     <div id="app">
         <input type="text" v-model="query" @keyup.enter="search" placeholder="Search for similar occurences in cases">
+        <div class="loading" v-if="isLoading">
+            <div class="spinner"></div>
+        </div>        
         <div class="search-results">
             <ol>
                 <li class="document" v-for="doc in documents">
+                    <p class="id">{{doc.id.split('[')[0]}}</p>
                     <a :href="doc.metadata.url"><h3>{{ doc.metadata.title }}</h3></a>
                     <div class="metadata">
                         <p>{{ doc.metadata.date }}</p>
                         <p>{{ doc.metadata.division }}</p>
                     </div>
                     <ul>
-                        <li class="excerpt" v-for="excerpt in doc.excerpts">
-                            <p v-html="excerpt.text"></p>
+                        <li class="excerpt" 
+                            v-for="excerpt in (doc.showMore ? doc.excerpts : doc.excerpts.slice(0, 2))" 
+                        >
+                            <p class="title" v-if="excerpt.metadata.title">{{excerpt.metadata.title}}</p>
+                            <p class="text" v-html="excerpt.text"></p>
                         </li>
                     </ul>
+                    <button v-if="doc.excerpts.length > 2" @click="doc.showMore = !doc.showMore" class="show-more">
+                        {{ doc.showMore ? 'Show less' : 'Show more' }}
+                    </button>
                 </li>
             </ol>
         </div>
@@ -132,12 +216,14 @@
         const app = Vue.createApp({
         data() {
           return {
+            isLoading: false,
             query: '',
             documents: []
           }
         },
         methods: {
             async search() {
+                this.isLoading = true;
                 const API_URL = 'https://asia-east2-tiger-queen.cloudfunctions.net/legally-search'
                 const payload = JSON.stringify({query: this.query});
                 const response = await fetch(API_URL, {
@@ -156,6 +242,13 @@
 
                 EXCERPTS.forEach((excerpt) => {
                 const document = DOCUMENTS[excerpt['documentIndex']]
+                const metadataKvPairs = {};
+
+                excerpt.metadata.forEach(({ name, value }) => {
+                    metadataKvPairs[name] = value;
+                });
+
+                excerpt.metadata = metadataKvPairs;
                 if (document['excerpts']) {
                     document['excerpts'].push(excerpt)
                 } else {
@@ -191,6 +284,7 @@
                     document.excerpts = deduplicatedExcerpts;
                 })
                 this.documents = DOCUMENTS
+                this.isLoading = false;
             }
         }
       })
