@@ -192,7 +192,7 @@
             <ol>
                 <li class="document" v-for="doc in documents">
                     <p class="id">{{doc.id.split('[')[0]}}</p>
-                    <a :href="doc.metadata.url"><h3>{{ doc.metadata.title }}</h3></a>
+                    <a :href="doc.metadata.url" target="_blank"><h3>{{ doc.metadata.title }}</h3></a>
                     <div class="metadata">
                         <p>{{ doc.metadata.date }}</p>
                         <p>{{ doc.metadata.division }}</p>
